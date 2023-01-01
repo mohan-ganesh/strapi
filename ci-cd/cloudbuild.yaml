@@ -1,0 +1,79 @@
+# Build the strapi image
+steps:
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      [
+        "build",
+        "--build-arg",
+        "output_dist_path=${_OUTPUT_DIST_PATH}",
+        "-t",
+        "gcr.io/${_DEPLOY_PROJECT}/${_SERVICE_NAME}",
+        ".",
+      ]
+
+  # push the container image to Container Registry
+  - name: "gcr.io/cloud-builders/docker"
+    args: ["push", "gcr.io/$_DEPLOY_PROJECT/$_SERVICE_NAME"]
+
+  # Deploy container image to Cloud Run
+
+  - name: "gcr.io/cloud-builders/gcloud"
+    args:
+      - "run"
+      - "deploy"
+      - "$_SERVICE_NAME"
+      - "--image"
+      - "gcr.io/$_DEPLOY_PROJECT/$_SERVICE_NAME"
+      - "--region"
+      - "$_REGION"
+      - "--platform"
+      - "managed"
+      - "$_DEPLOY_PROJECT"
+      - "--project"
+      - "$_DEPLOY_PROJECT"
+      - "--vpc-connector"
+      - "$_VPC_CONNECTOR_NAME"
+      - "--vpc-egress"
+      - "$_VPC_ACCESS_EGRESS"
+      - "--add-cloudsql-instances"
+      - "$_SQL_INSTANCE"
+      - "--set-env-vars"
+      - "PROJECT_ID=${_DEPLOY_PROJECT}"
+      - "--set-env-vars"
+      - "DATABASE_NAME=${_DATABASE_NAME}"
+      - "--set-env-vars"
+      - "DATABASE_USERNAME=${_DATABASE_USERNAME}"
+      - "--set-env-vars"
+      - "DATABASE_PASSWORD=${_DATABASE_PASSWORD}"
+      - "--set-env-vars"
+      - "DATABASE_HOST=${_DATABASE_HOST}"
+      - "--set-env-vars"
+      - "APP_KEYS=${_APP_KEYS}"
+      - "--set-env-vars"
+      - "API_TOKEN=${_API_TOKEN}"
+      - "--set-env-vars"
+      - "API_TOKEN_SALT=${_API_TOKEN_SALT}"
+      - "--set-env-vars"
+      - "ADMIN_JWT_SECRET=${_ADMIN_JWT_SECRET}"
+      - "--set-env-vars"
+      - "JWT_SECRET=${_JWT_SECRET}"
+
+substitutions:
+  _OUTPUT_DIST_PATH: "/"
+  _DEPLOY_PROJECT: ""
+  _SERVICE_NAME: ""
+  _REGION: "us-central1"
+  _AUTH_OPTION: "--allow-unauthenticated"
+  _VPC_CONNECTOR_NAME: ""
+  _DATABASE_NAME: ""
+  _DATABASE_USERNAME: ""
+  _DATABASE_PASSWORD: ""
+  _DATABASE_HOST: ""
+  _APP_KEYS: ""
+  _API_TOKEN: ""
+  _API_TOKEN_SALT: ""
+  _ADMIN_JWT_SECRET: ""
+  _JWT_SECRET: ""
+  _VPC_ACCESS_EGRESS: "private-ranges-only"
+
+timeout: 2700s
